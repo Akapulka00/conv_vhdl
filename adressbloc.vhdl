@@ -32,7 +32,7 @@ entity addressblock is
                 -----------------------
                 if comm_1 = LOAD_COM    then
                     reg_post<='1';
-                    result_in_reg<=data_reg;
+                    result_in_reg<=op_1;
                     else
                     op_1 <= data_perem(to_integer(unsigned(adderss_11)));
                     op_2 <= data_perem(to_integer(unsigned(adderss_22)));

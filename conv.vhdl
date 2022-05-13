@@ -68,6 +68,8 @@ architecture a_conv of conv is
     signal result_in_reg :   std_logic_vector(DATA_SIZE - 1 downto 0);
     signal data_out   :  STD_LOGIC_VECTOR(31 DOWNTO 0); -- output
     signal  data_reg   :  STD_LOGIC_VECTOR(31 DOWNTO 0); --регистр
+    signal op_1 : std_logic_vector(DATA_SIZE - 1 downto 0);
+    signal op_2 : std_logic_vector(DATA_SIZE - 1 downto 0);
     
 begin
   valid<='1';
@@ -90,6 +92,8 @@ begin
       data_perem=>data_perem,
       reg_post=>reg_post,
       data_reg=>data_reg,
+      op_1=>op_1,
+      op_2=>op_2,
       result_in_reg=>result_in_reg,
       comm_1  => comm_1 
     );
