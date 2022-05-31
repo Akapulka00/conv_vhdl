@@ -23,6 +23,7 @@ package my_package is
     type addrarr is array (natural range <>) of std_logic_vector(ADDR_SIZE - 1 downto 0);
     type codearr is array (natural range <>) of std_logic_vector(CODE_SIZE - 1 downto 0);
     type commarr is array (natural range <>) of std_logic_vector(COMM_SIZE - 1 downto 0);
+    type regarr is array (natural range <>) of std_logic_vector(DATA_SIZE - 1 downto 0);
    
   --  type commarr  std_logic_vector(COMM_SIZE - 1 downto 0);
   --  type datarr  std_logic_vector(DATA_SIZE - 1 downto 0);

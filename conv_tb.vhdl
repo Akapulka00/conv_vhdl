@@ -8,22 +8,34 @@ use work.my_package.all;
 entity TestBench  is
 end TestBench ;
 architecture BEHAVIOR  of TestBench is
-component conv is
- generic(
-CONV_COUNT :  natural
- );
+component conv_bloc is
   port (
- res : in  std_logic;
- clk : in  std_logic;
- comm   : in  std_logic_vector(COMM_SIZE - 1 downto 0);
- --result : out std_logic_vector(DATA_SIZE - 1 downto 0);
- --is_write  : out STD_LOGIC ;
- data_perem: in datarr(0 to 2**(ADDR_SIZE + 1) - 1);
- data : in datarr(0 to 2**(ADDR_SIZE + 1) - 1)
- --next_comm : out STD_LOGIC
+      rst : IN STD_LOGIC;
+      clk : IN STD_LOGIC;
+      --// input channel
+      valid_rd : IN STD_LOGIC;
+      ready_rd : OUT STD_LOGIC;
+      --output channel
+      valid_wr : OUT STD_LOGIC;
+      ready_wr : IN STD_LOGIC;
+      data_rd : IN STD_LOGIC_VECTOR(COMM_SIZE - 1 downto 0);--data in
+      data_wr: out STD_LOGIC_VECTOR(COMM_SIZE - 1 downto 0) --data out
   );
   end component;
+  component conv IS
+  PORT (
+    rst : IN STD_LOGIC;
+    clk : IN STD_LOGIC;
+    --// input channel
+    valid_rd : IN STD_LOGIC;
+    ready_rd : OUT STD_LOGIC;--
+    data_perem: in  datarr(0 to 2**(ADDR_SIZE + 1) - 1);--память данных
+    commdat     : in std_logic_vector(COMM_SIZE - 1 downto 0)--data in data_rd
+  );
+
+  end component;
   constant CONV_COUNT : natural := 5;
+  signal clk_count: natural :=0;
   signal res : std_logic := '1';
   signal clk : std_logic := '0';
   signal comm   : commarr(4 downto 0);
@@ -60,21 +72,31 @@ CONV_COUNT :  natural
   signal    comm_1_out :  std_logic_vector(CODE_SIZE - 1 downto 0);
   type naturalarr is array (natural range <>) of natural;
   signal next_comm_num : naturalarr(0 to CONV_COUNT - 1) := (others => 0);
-
+  -----------------------------------------
+  signal valid_rd :STD_LOGIC;
+  signal ready_wr:STD_LOGIC;
+  signal ready_rd :STD_LOGIC;
+  signal valid_wr :  STD_LOGIC;
+  signal data_rd: std_logic_vector(COMM_SIZE - 1 downto 0);
+  signal data_wr: std_logic_vector(COMM_SIZE - 1 downto 0);
+  signal data_wr2: std_logic_vector(COMM_SIZE - 1 downto 0);
+  signal data_wr3: std_logic_vector(COMM_SIZE - 1 downto 0);
+  signal ready_wr2:STD_LOGIC;
+  signal ready_wr3:STD_LOGIC;
+  signal valid_wr2 :  STD_LOGIC;
 begin
-  res <= '0' after 10 fs;
-  conv_1 : conv generic map (
-  CONV_COUNT => CONV_COUNT
-  )
+  res <= '0' after 1 fs;
+  valid_rd<='1'after 5 fs;
+  conv_1 : conv 
   port map (
-  res => res,
+  rst => res,
   clk => clk,
-  comm   => commdat,
-  --result => result,
-  --is_write  => is_write,
+  --// input channel
+  valid_rd =>valid_rd,
+  ready_rd =>ready_rd,
   data_perem=>data_perem,
-  data =>data
-  --next_comm => next_comm
+  --output channel
+  commdat =>  commdat --data in data_rd
   );
   ----------------
   
@@ -97,9 +119,9 @@ begin
  --------------------------------------------------------------------------------------------------------------------------------
  data(05) <= (SUM_COM & std_logic_vector(to_signed(24, ADDR_SIZE)) & std_logic_vector(to_signed(25, ADDR_SIZE)) & std_logic_vector(to_signed(40, ADDR_SIZE)));
  data(06) <= (SUM_COM & std_logic_vector(to_signed(25, ADDR_SIZE)) & std_logic_vector(to_signed(26, ADDR_SIZE)) & std_logic_vector(to_signed(41, ADDR_SIZE)));
- data(07) <= (SUM_COM & std_logic_vector(to_signed(40, ADDR_SIZE)) & std_logic_vector(to_signed(41, ADDR_SIZE)) & std_logic_vector(to_signed(42, ADDR_SIZE)));
- data(08) <= (LOAD_COM & std_logic_vector(to_signed(42, ADDR_SIZE)) & NULL_ADDR & std_logic_vector(to_signed(1, ADDR_SIZE)));
- data(09) <= (STORE_COM & std_logic_vector(to_signed( 1, ADDR_SIZE)) & NULL_ADDR & std_logic_vector(to_signed(43, ADDR_SIZE)));
+ data(07) <= (SUM_COM & std_logic_vector(to_signed(24, ADDR_SIZE)) & std_logic_vector(to_signed(41, ADDR_SIZE)) & std_logic_vector(to_signed(42, ADDR_SIZE)));
+ data(08) <= (LOAD_COM & std_logic_vector(to_signed(8, ADDR_SIZE)) & std_logic_vector(to_signed(26, ADDR_SIZE)) & std_logic_vector(to_signed(1, ADDR_SIZE)));
+ data(09) <= (STORE_COM & std_logic_vector(to_signed( 8, ADDR_SIZE)) & NULL_ADDR & std_logic_vector(to_signed(43, ADDR_SIZE)));
  data(10) <= (STOP_COM & NULL_ADDR & NULL_ADDR & NULL_ADDR);
  --Переменные первой программы
   data_perem(24) <= std_logic_vector(to_signed(7, DATA_SIZE));
@@ -180,18 +202,18 @@ begin
  comm(3) <= NULL_COMM;
  comm(4) <= NULL_COMM;
 
-  elsif(clk'event and clk = '0') then
-
+  elsif(rising_edge(clk)) then
+    clk_count<=clk_count+1;
  for i in 0 to CONV_COUNT - 1 loop
 
-   if(data(next_comm_num(i))(COMM_SIZE - 1 downto COMM_SIZE - CODE_SIZE) /= STOP_COM) then
+   if(data(next_comm_num(i))(COMM_SIZE - 1 downto COMM_SIZE - CODE_SIZE) /= STOP_COM and ready_rd='1') then
 
  op_1(i) <= data(to_integer(unsigned(adderss_1(i))));
  op_2(i) <= data(to_integer(unsigned(adderss_2(i))));
 
  next_comm_num(i) <= next_comm_num(i) + 1;
  
- if (next_comm_num(i)>=5 and next_comm_num(i)<15) then
+ if (i=0) then
   commdat<= data(next_comm_num(i));
  end if ;
  if (next_comm_num(i)>=15 and next_comm_num(i)<60) then
