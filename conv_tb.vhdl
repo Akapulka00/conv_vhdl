@@ -32,7 +32,17 @@ component conv_bloc is
     data_perem: in  datarr(0 to 2**(ADDR_SIZE + 1) - 1);--память данных
     commdat     : in std_logic_vector(COMM_SIZE - 1 downto 0)--data in data_rd
   );
-
+  end component;
+  component conflict_bloc IS
+  PORT (
+    rst : IN STD_LOGIC;
+        clk : IN STD_LOGIC;
+        --// input channel
+        ready_rd : out STD_LOGIC:='1';
+        valid_rd : IN STD_LOGIC;
+        din : in  std_logic_vector(COMM_SIZE - 1 downto 0);
+        dout : out  std_logic_vector(COMM_SIZE - 1 downto 0)
+  );
   end component;
   constant CONV_COUNT : natural := 5;
   signal clk_count: natural :=0;
@@ -40,6 +50,7 @@ component conv_bloc is
   signal clk : std_logic := '0';
   signal comm   : commarr(4 downto 0);
   signal commdat   : std_logic_vector(COMM_SIZE - 1 downto 0);
+  signal commdat_buff   : std_logic_vector(COMM_SIZE - 1 downto 0);
   signal commdat_1   : std_logic_vector(COMM_SIZE - 1 downto 0);
   signal commdat_2   : std_logic_vector(COMM_SIZE - 1 downto 0);
   signal commdat_3   : std_logic_vector(COMM_SIZE - 1 downto 0);
@@ -77,6 +88,36 @@ component conv_bloc is
   signal ready_wr:STD_LOGIC;
   signal ready_rd :STD_LOGIC;
   signal valid_wr :  STD_LOGIC;
+-----------------------------------------------
+signal valid_rd_1 :STD_LOGIC;
+signal ready_wr_1 :STD_LOGIC;
+signal ready_rd_1 :STD_LOGIC;
+signal valid_wr_1 :  STD_LOGIC;
+signal commdat_buff_1   : std_logic_vector(COMM_SIZE - 1 downto 0);
+
+------------------------------------------------
+signal valid_rd_2 :STD_LOGIC;
+signal ready_wr_2 :STD_LOGIC;
+signal ready_rd_2 :STD_LOGIC;
+signal valid_wr_2 :  STD_LOGIC;
+signal commdat_buff_2   : std_logic_vector(COMM_SIZE - 1 downto 0);
+
+------------------------------------------------
+signal valid_rd_3 :STD_LOGIC;
+signal ready_wr_3 :STD_LOGIC;
+signal ready_rd_3 :STD_LOGIC;
+signal valid_wr_3 :  STD_LOGIC;
+signal commdat_buff_3   : std_logic_vector(COMM_SIZE - 1 downto 0);
+
+------------------------------------------------
+signal valid_rd_4 :STD_LOGIC;
+signal ready_wr_4 :STD_LOGIC;
+signal ready_rd_4 :STD_LOGIC;
+signal valid_wr_4 :  STD_LOGIC;
+signal commdat_buff_4   : std_logic_vector(COMM_SIZE - 1 downto 0);
+
+------------------------------------------------
+  
   signal data_rd: std_logic_vector(COMM_SIZE - 1 downto 0);
   signal data_wr: std_logic_vector(COMM_SIZE - 1 downto 0);
   signal data_wr2: std_logic_vector(COMM_SIZE - 1 downto 0);
@@ -86,7 +127,17 @@ component conv_bloc is
   signal valid_wr2 :  STD_LOGIC;
 begin
   res <= '0' after 1 fs;
-  valid_rd<='1'after 5 fs;
+  conf_1 :conflict_bloc
+  port map (
+    rst => res,
+    clk => clk,
+    ready_rd => valid_rd,
+    --// input channel
+    valid_rd => ready_rd,
+    dout=>commdat_buff,
+    --output channel
+    din =>  commdat --data in data_rd
+    );
   conv_1 : conv 
   port map (
   rst => res,
@@ -96,8 +147,97 @@ begin
   ready_rd =>ready_rd,
   data_perem=>data_perem,
   --output channel
-  commdat =>  commdat --data in data_rd
+  commdat =>  commdat_buff --data in data_rd
   );
+  conf_2 :conflict_bloc
+  port map (
+    rst => res,
+    clk => clk,
+    ready_rd=>valid_rd_1,
+    --// input channel
+    valid_rd =>ready_rd_1,
+    dout=>commdat_buff_1,
+    --output channel
+    din =>  commdat_1 --data in data_rd
+    );
+    conv_2 : conv 
+  port map (
+  rst => res,
+  clk => clk,
+  --// input channel
+  valid_rd =>valid_rd_1,
+  ready_rd =>ready_rd_1,
+  data_perem=>data_perem,
+  --output channel
+  commdat =>  commdat_buff_1 --data in data_rd
+  );
+  conf_3 :conflict_bloc
+  port map (
+    rst => res,
+    clk => clk,
+    ready_rd=>valid_rd_2,
+    --// input channel
+    valid_rd =>ready_rd_2,
+    dout=>commdat_buff_2,
+    --output channel
+    din =>  commdat_2 --data in data_rd
+    );
+    conv_3 : conv 
+  port map (
+  rst => res,
+  clk => clk,
+  --// input channel
+  valid_rd =>valid_rd_2,
+  ready_rd =>ready_rd_2,
+  data_perem=>data_perem,
+  --output channel
+  commdat =>  commdat_buff_2 --data in data_rd
+  );
+  conf_4 :conflict_bloc
+  port map (
+    rst => res,
+    clk => clk,
+    ready_rd=>valid_rd_3,
+    --// input channel
+    valid_rd =>ready_rd_3,
+    dout=>commdat_buff_3,
+    --output channel
+    din =>  commdat_3 --data in data_rd
+    );
+    conv_4 : conv 
+  port map (
+  rst => res,
+  clk => clk,
+  --// input channel
+  valid_rd =>valid_rd_3,
+  ready_rd =>ready_rd_3,
+  data_perem=>data_perem,
+  --output channel
+  commdat =>  commdat_buff_3 --data in data_rd
+  );
+  conf_5 :conflict_bloc
+  port map (
+    rst => res,
+    clk => clk,
+    ready_rd=>valid_rd_4,
+    --// input channel
+    valid_rd =>ready_rd_4,
+    dout=>commdat_buff_4,
+    --output channel
+    din =>  commdat_4 --data in data_rd
+    );
+    conv_5 : conv 
+  port map (
+  rst => res,
+  clk => clk,
+  --// input channel
+  valid_rd =>valid_rd_4,
+  ready_rd =>ready_rd_4,
+  data_perem=>data_perem,
+  --output channel
+  commdat =>  commdat_buff_4 --data in data_rd
+  );
+    
   ----------------
   
   p_clk : process begin
@@ -137,8 +277,8 @@ begin
  data(17) <= (NOP_COM & NULL_ADDR & NULL_ADDR & NULL_ADDR);
  data(18) <= (SUM_COM & std_logic_vector(to_signed(50, ADDR_SIZE)) & std_logic_vector(to_signed(51, ADDR_SIZE)) & std_logic_vector(to_signed(52, ADDR_SIZE)));
  data(19) <= (NOP_COM & NULL_ADDR & NULL_ADDR & NULL_ADDR);
- data(20) <= (LOAD_COM  & std_logic_vector(to_signed(52, ADDR_SIZE)) & NULL_ADDR & std_logic_vector(to_signed(2, ADDR_SIZE)));
- data(21) <= (STORE_COM & std_logic_vector(to_signed( 2, ADDR_SIZE)) & NULL_ADDR & std_logic_vector(to_signed(53, ADDR_SIZE)));
+ data(20) <= (LOAD_COM  & std_logic_vector(to_signed(5, ADDR_SIZE)) & NULL_ADDR & std_logic_vector(to_signed(2, ADDR_SIZE)));
+ data(21) <= (STORE_COM & std_logic_vector(to_signed(5, ADDR_SIZE)) & NULL_ADDR & std_logic_vector(to_signed(53, ADDR_SIZE)));
  data(22) <= (STOP_COM  & NULL_ADDR & NULL_ADDR & NULL_ADDR);
  --Переменные второй программы
  data_perem(28) <= std_logic_vector(to_signed(7, DATA_SIZE));
@@ -152,7 +292,7 @@ begin
  data(60) <= (SUM_COM & std_logic_vector(to_signed(79, ADDR_SIZE)) & std_logic_vector(to_signed(80, ADDR_SIZE)) & std_logic_vector(to_signed(94, ADDR_SIZE)));
  data(61) <= (SUB_COM & std_logic_vector(to_signed(80, ADDR_SIZE)) & std_logic_vector(to_signed(81, ADDR_SIZE)) & std_logic_vector(to_signed(95, ADDR_SIZE)));
  data(62) <= (SUM_COM & std_logic_vector(to_signed(94, ADDR_SIZE)) & std_logic_vector(to_signed(95, ADDR_SIZE)) & std_logic_vector(to_signed(96, ADDR_SIZE)));
- data(63) <= (LOAD_COM  & std_logic_vector(to_signed(96, ADDR_SIZE)) & NULL_ADDR & std_logic_vector(to_signed(3, ADDR_SIZE)));
+ data(63) <= (LOAD_COM  & std_logic_vector(to_signed( 3, ADDR_SIZE)) & NULL_ADDR & std_logic_vector(to_signed(3, ADDR_SIZE)));
  data(64) <= (STORE_COM & std_logic_vector(to_signed( 3, ADDR_SIZE)) & NULL_ADDR & std_logic_vector(to_signed(97, ADDR_SIZE)));
  data(65) <= (STOP_COM  & NULL_ADDR & NULL_ADDR & NULL_ADDR);
  --Переменные третьей программы
@@ -169,7 +309,7 @@ begin
  data(72) <= (NOP_COM & NULL_ADDR  & NULL_ADDR  & NULL_ADDR);
  data(73) <= (SUM_COM & std_logic_vector(to_signed(106, ADDR_SIZE)) & std_logic_vector(to_signed(107, ADDR_SIZE)) & std_logic_vector(to_signed(108, ADDR_SIZE)));
  data(74) <= (NOP_COM & NULL_ADDR  & NULL_ADDR  & NULL_ADDR);
- data(75) <= (LOAD_COM  & std_logic_vector(to_signed(108, ADDR_SIZE)) & NULL_ADDR  & std_logic_vector(to_signed(4, ADDR_SIZE)));
+ data(75) <= (LOAD_COM  & std_logic_vector(to_signed( 4, ADDR_SIZE)) & NULL_ADDR  & std_logic_vector(to_signed(4, ADDR_SIZE)));
  data(76) <= (STORE_COM & std_logic_vector(to_signed(  4, ADDR_SIZE)) & NULL_ADDR  & std_logic_vector(to_signed(109, ADDR_SIZE)));
  data(77) <= (STOP_COM  & NULL_ADDR  & NULL_ADDR  & NULL_ADDR);
  --Переменные четвертой программы
@@ -185,7 +325,7 @@ begin
  data(112) <= (SUB_COM & std_logic_vector(to_signed( 122, ADDR_SIZE)) & std_logic_vector(to_signed( 120, ADDR_SIZE)) & std_logic_vector(to_signed(123, ADDR_SIZE)));
  data(113) <= (SUB_COM & std_logic_vector(to_signed(122, ADDR_SIZE)) & std_logic_vector(to_signed(123, ADDR_SIZE)) & std_logic_vector(to_signed(118, ADDR_SIZE)));
  data(114) <= (NOP_COM & NULL_ADDR & NULL_ADDR & NULL_ADDR);
- data(115) <= (LOAD_COM  & std_logic_vector(to_signed(118, ADDR_SIZE)) & NULL_ADDR  & std_logic_vector(to_signed(5, ADDR_SIZE)));
+ data(115) <= (LOAD_COM  & std_logic_vector(to_signed( 5, ADDR_SIZE)) & NULL_ADDR  & std_logic_vector(to_signed(5, ADDR_SIZE)));
  data(116) <= (STORE_COM & std_logic_vector(to_signed(  5, ADDR_SIZE)) & NULL_ADDR  & std_logic_vector(to_signed(118, ADDR_SIZE)));
  data(117) <= (STOP_COM  & NULL_ADDR & NULL_ADDR & NULL_ADDR);
  --Переменные четвертой программы
@@ -207,25 +347,21 @@ begin
  for i in 0 to CONV_COUNT - 1 loop
 
    if(data(next_comm_num(i))(COMM_SIZE - 1 downto COMM_SIZE - CODE_SIZE) /= STOP_COM and ready_rd='1') then
-
- op_1(i) <= data(to_integer(unsigned(adderss_1(i))));
- op_2(i) <= data(to_integer(unsigned(adderss_2(i))));
-
- next_comm_num(i) <= next_comm_num(i) + 1;
+   next_comm_num(i) <= next_comm_num(i) + 1;
  
  if (i=0) then
   commdat<= data(next_comm_num(i));
  end if ;
- if (next_comm_num(i)>=15 and next_comm_num(i)<60) then
+ if (i=1) then
   commdat_1<= data(next_comm_num(i));
  end if ;
- if (next_comm_num(i)>=60 and next_comm_num(i)<70) then
+ if (i=2) then
   commdat_2<= data(next_comm_num(i));
  end if ;
- if (next_comm_num(i)>=70 and next_comm_num(i)<100) then
+ if (i=3) then
   commdat_2<= data(next_comm_num(i));
  end if ;
- if (next_comm_num(i)>=110 ) then
+ if (i=4) then
   commdat_3<= data(next_comm_num(i));
  end if ;
 
