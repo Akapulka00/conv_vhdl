@@ -46,7 +46,8 @@ architecture a_conv of conv is
       comm_1 : in std_logic_vector(CODE_SIZE - 1 downto 0);
       adderss_11 : in  std_logic_vector(ADDR_SIZE - 1 downto 0);
       adderss_22 : in  std_logic_vector(ADDR_SIZE - 1 downto 0);
-      data_perem: in  datarr(0 to 2**(ADDR_SIZE + 1) - 1);--память данных
+     -- data_perem: in  datarr(0 to 2**(ADDR_SIZE + 1) - 1);--память данных
+      data_perem : in regarr(0 to 31);--- забираем данные из регистра
       op_1 :out std_logic_vector(DATA_SIZE - 1 downto 0);
       op_2 :out std_logic_vector(DATA_SIZE - 1 downto 0);
       comm_1_out : out std_logic_vector(CODE_SIZE - 1 downto 0)
@@ -65,25 +66,46 @@ architecture a_conv of conv is
   component alublock is
     port(
       rst : IN STD_LOGIC;
-      clk : IN STD_LOGIC;
-      --// input channel
-      valid_rd : IN STD_LOGIC;
-      ready_rd : OUT STD_LOGIC;
-      --output channel
-      valid_wr : OUT STD_LOGIC;
-      ready_wr : IN STD_LOGIC;
-      op_1 :IN std_logic_vector(DATA_SIZE - 1 downto 0);
-      reg : in regarr(0 to 31); -- data
-      op_1_addr_reg :out std_logic_vector(DATA_SIZE - 1 downto 0);
-      op_2 :IN std_logic_vector(DATA_SIZE - 1 downto 0);
-      comm_1 : in std_logic_vector(CODE_SIZE - 1 downto 0);
-      result : out  std_logic_vector(DATA_SIZE - 1 downto 0);
-      reg_post: out std_logic;
-      result_in_reg : out  std_logic_vector(DATA_SIZE - 1 downto 0);--линия записи в память данных
-      is_write : out  STD_LOGIC;
-      next_comm :out  STD_LOGIC
+        clk : IN STD_LOGIC;
+        --// input channel
+        valid_rd : IN STD_LOGIC;
+        ready_rd : OUT STD_LOGIC;
+        --output channel
+        valid_wr : OUT STD_LOGIC;
+        ready_wr : IN STD_LOGIC;
+        op_1 :IN std_logic_vector(DATA_SIZE - 1 downto 0);
+        op_2 :IN std_logic_vector(DATA_SIZE - 1 downto 0);
+        comm_1 : in std_logic_vector(CODE_SIZE - 1 downto 0);
+      --  reg : in regarr(0 to 31); -- data
+        op_1_addr_reg :out std_logic_vector(DATA_SIZE - 1 downto 0);
+        op_2_data_reg :out std_logic_vector(DATA_SIZE - 1 downto 0);
+        comm_1_to_reg : out std_logic_vector(CODE_SIZE - 1 downto 0);
+        result : out  std_logic_vector(DATA_SIZE - 1 downto 0)
     );
   end component;
+  component FRbloc is
+    port(
+      rst : IN STD_LOGIC;
+        clk : IN STD_LOGIC;
+        --// input channel
+        valid_rd : IN STD_LOGIC;
+        ready_rd : OUT STD_LOGIC;
+        --output channel
+        valid_wr : OUT STD_LOGIC;
+        ready_wr : IN STD_LOGIC;
+        -----------------------------
+        op_1 :IN std_logic_vector(DATA_SIZE - 1 downto 0);
+        op_2 :IN std_logic_vector(DATA_SIZE - 1 downto 0);
+        data :IN std_logic_vector(DATA_SIZE - 1 downto 0);
+        comm_1 :IN std_logic_vector(CODE_SIZE - 1 downto 0);
+        reg_post: out std_logic;
+        addr_to_reg : out std_logic_vector(DATA_SIZE - 1 downto 0);
+        result_in_reg : out  std_logic_vector(DATA_SIZE - 1 downto 0);--линия записи в память данных
+        is_write : out  STD_LOGIC;
+        next_comm :out  STD_LOGIC
+    );
+  end component;
+
   
   signal ready_wr : STD_LOGIC;
   signal valid_wr :  STD_LOGIC;
@@ -106,11 +128,15 @@ architecture a_conv of conv is
   signal ready_wr2:STD_LOGIC;
   signal valid_wr2 :  STD_LOGIC;
   signal ready_wr3:STD_LOGIC;
+  signal valid_wr3 :  STD_LOGIC;
   signal result :  std_logic_vector(DATA_SIZE - 1 downto 0);
   signal     is_write :  STD_LOGIC;
   signal     next_comm :  STD_LOGIC;
   signal data_out :  regarr(0 to 31); -- data
     signal op_1_addr_reg:std_logic_vector(DATA_SIZE - 1 downto 0);
+    signal op_2_data_reg:std_logic_vector(DATA_SIZE - 1 downto 0);
+    signal comm_1_to_reg : std_logic_vector(CODE_SIZE - 1 downto 0);
+    signal addr_to_reg :  std_logic_vector(DATA_SIZE - 1 downto 0);
     
 begin
     codeblock_1:codeblock 
@@ -142,7 +168,7 @@ begin
       comm_1 =>comm_1,
       adderss_11 =>adderss_11,
       adderss_22 =>adderss_22,
-      data_perem=>data_perem,
+      data_perem=>data_out,
       op_1 =>op_1,
       op_2 =>op_2,
       comm_1_out => comm_1_out );
@@ -154,7 +180,7 @@ begin
         data_in=>result_in_reg,
         ld=>reg_post,
         data_out=>data_out,
-        addr=>op_1
+        addr=>addr_to_reg
       );
       alublock_1:alublock
       port map(
@@ -167,14 +193,29 @@ begin
       valid_wr =>valid_wr2,
       ready_wr =>ready_wr2,
       op_1=>op_1,
-      reg=>data_out,
-      op_1_addr_reg=>op_1_addr_reg,
       op_2=>op_2,
-      reg_post=>reg_post,
-      result_in_reg=>result_in_reg,
       comm_1=>comm_1_out,
-      result=>result,
-      is_write=>is_write,
-      next_comm=>next_comm
+      op_1_addr_reg=>op_1_addr_reg,
+      op_2_data_reg =>op_2_data_reg,
+      comm_1_to_reg =>comm_1_to_reg,
+      result =>result
+      );
+      FRbloc_1:FRbloc
+      port map(
+        rst =>rst,
+        clk =>clk,
+         --// input channel
+      valid_rd =>valid_wr2,
+      ready_rd =>ready_wr2,
+      --output channel
+      valid_wr =>valid_wr3,
+      ready_wr =>ready_wr3,
+      op_1=>op_1_addr_reg,
+      op_2=>op_2_data_reg,
+      data=>result,
+      comm_1 =>comm_1_to_reg,
+      reg_post=>reg_post,
+      addr_to_reg =>addr_to_reg,
+      result_in_reg =>result_in_reg
       );
 end architecture a_conv;

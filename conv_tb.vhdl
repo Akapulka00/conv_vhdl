@@ -83,6 +83,7 @@ component conv_bloc is
   signal    comm_1_out :  std_logic_vector(CODE_SIZE - 1 downto 0);
   type naturalarr is array (natural range <>) of natural;
   signal next_comm_num : naturalarr(0 to CONV_COUNT - 1) := (others => 0);
+  signal stop_f  :STD_LOGIC;
   -----------------------------------------
   signal valid_rd :STD_LOGIC;
   signal ready_wr:STD_LOGIC;
@@ -131,7 +132,7 @@ begin
   port map (
     rst => res,
     clk => clk,
-    ready_rd => valid_rd,
+    ready_rd => stop_f,
     --// input channel
     valid_rd => ready_rd,
     dout=>commdat_buff,
@@ -248,6 +249,7 @@ begin
   end process p_clk;
 
   main_tb : process(clk, res) begin
+  
  --Настройка памяти
   if(res = '1') then
  --выставляем начпало куоманд
@@ -257,11 +259,11 @@ begin
  next_comm_num(3) <= 70;
  next_comm_num(4) <= 110;
  --------------------------------------------------------------------------------------------------------------------------------
- data(05) <= (SUM_COM & std_logic_vector(to_signed(24, ADDR_SIZE)) & std_logic_vector(to_signed(25, ADDR_SIZE)) & std_logic_vector(to_signed(40, ADDR_SIZE)));
- data(06) <= (SUM_COM & std_logic_vector(to_signed(25, ADDR_SIZE)) & std_logic_vector(to_signed(26, ADDR_SIZE)) & std_logic_vector(to_signed(41, ADDR_SIZE)));
- data(07) <= (SUM_COM & std_logic_vector(to_signed(24, ADDR_SIZE)) & std_logic_vector(to_signed(41, ADDR_SIZE)) & std_logic_vector(to_signed(42, ADDR_SIZE)));
- data(08) <= (LOAD_COM & std_logic_vector(to_signed(8, ADDR_SIZE)) & std_logic_vector(to_signed(26, ADDR_SIZE)) & std_logic_vector(to_signed(1, ADDR_SIZE)));
- data(09) <= (STORE_COM & std_logic_vector(to_signed( 8, ADDR_SIZE)) & NULL_ADDR & std_logic_vector(to_signed(43, ADDR_SIZE)));
+ data(05) <= (STORE_COM & std_logic_vector(to_signed( 8, ADDR_SIZE)) & std_logic_vector(to_signed( 8, ADDR_SIZE)) & std_logic_vector(to_signed(43, ADDR_SIZE)));
+ data(06) <= (STORE_COM & std_logic_vector(to_signed( 7, ADDR_SIZE)) & std_logic_vector(to_signed( 8, ADDR_SIZE)) & std_logic_vector(to_signed(42, ADDR_SIZE)));
+ data(07) <= (SUM_COM & std_logic_vector(to_signed(7, ADDR_SIZE)) & std_logic_vector(to_signed(8, ADDR_SIZE)) & std_logic_vector(to_signed(8, ADDR_SIZE)));
+ data(08) <= (LOAD_COM & std_logic_vector(to_signed(8, ADDR_SIZE)) & NULL_ADDR & NULL_ADDR);
+ data(09) <= (STORE_COM & std_logic_vector(to_signed( 7, ADDR_SIZE)) &  std_logic_vector(to_signed( 0, ADDR_SIZE)) & std_logic_vector(to_signed(0, ADDR_SIZE)));
  data(10) <= (STOP_COM & NULL_ADDR & NULL_ADDR & NULL_ADDR);
  --Переменные первой программы
   data_perem(24) <= std_logic_vector(to_signed(7, DATA_SIZE));
@@ -272,14 +274,12 @@ begin
   data_perem(42) <= std_logic_vector(to_signed(0, DATA_SIZE));
   --------------------------------------------------------------------------------------------------------------------------------
  --Вторая программа
- data(15) <= (SUM_COM & std_logic_vector(to_signed(28, ADDR_SIZE)) & std_logic_vector(to_signed(29, ADDR_SIZE)) & std_logic_vector(to_signed(50, ADDR_SIZE)));
- data(16) <= (SUM_COM & std_logic_vector(to_signed(29, ADDR_SIZE)) & std_logic_vector(to_signed(30, ADDR_SIZE)) & std_logic_vector(to_signed(51, ADDR_SIZE)));
- data(17) <= (NOP_COM & NULL_ADDR & NULL_ADDR & NULL_ADDR);
- data(18) <= (SUM_COM & std_logic_vector(to_signed(50, ADDR_SIZE)) & std_logic_vector(to_signed(51, ADDR_SIZE)) & std_logic_vector(to_signed(52, ADDR_SIZE)));
+ data(15) <= (STORE_COM & std_logic_vector(to_signed( 8, ADDR_SIZE)) & std_logic_vector(to_signed( 8, ADDR_SIZE)) & std_logic_vector(to_signed(43, ADDR_SIZE)));
+ data(16) <= (STORE_COM & std_logic_vector(to_signed( 7, ADDR_SIZE)) & std_logic_vector(to_signed( 8, ADDR_SIZE)) & std_logic_vector(to_signed(42, ADDR_SIZE)));
+ data(17) <= (SUM_COM & std_logic_vector(to_signed(7, ADDR_SIZE)) & std_logic_vector(to_signed(8, ADDR_SIZE)) & std_logic_vector(to_signed(8, ADDR_SIZE)));
+ data(18) <= (LOAD_COM & std_logic_vector(to_signed(8, ADDR_SIZE)) & std_logic_vector(to_signed(7, ADDR_SIZE)) & std_logic_vector(to_signed(1, ADDR_SIZE)));
  data(19) <= (NOP_COM & NULL_ADDR & NULL_ADDR & NULL_ADDR);
- data(20) <= (LOAD_COM  & std_logic_vector(to_signed(5, ADDR_SIZE)) & NULL_ADDR & std_logic_vector(to_signed(2, ADDR_SIZE)));
- data(21) <= (STORE_COM & std_logic_vector(to_signed(5, ADDR_SIZE)) & NULL_ADDR & std_logic_vector(to_signed(53, ADDR_SIZE)));
- data(22) <= (STOP_COM  & NULL_ADDR & NULL_ADDR & NULL_ADDR);
+ data(20) <= (STOP_COM & NULL_ADDR & NULL_ADDR & NULL_ADDR);
  --Переменные второй программы
  data_perem(28) <= std_logic_vector(to_signed(7, DATA_SIZE));
  data_perem(29) <= std_logic_vector(to_signed(8, DATA_SIZE));
@@ -344,9 +344,10 @@ begin
 
   elsif(rising_edge(clk)) then
     clk_count<=clk_count+1;
+    valid_rd<='1';
  for i in 0 to CONV_COUNT - 1 loop
 
-   if(data(next_comm_num(i))(COMM_SIZE - 1 downto COMM_SIZE - CODE_SIZE) /= STOP_COM and ready_rd='1') then
+   if(data(next_comm_num(i))(COMM_SIZE - 1 downto COMM_SIZE - CODE_SIZE) /= STOP_COM and ready_rd='1' and stop_f='1' ) then
    next_comm_num(i) <= next_comm_num(i) + 1;
  
  if (i=0) then
@@ -356,13 +357,13 @@ begin
   commdat_1<= data(next_comm_num(i));
  end if ;
  if (i=2) then
-  commdat_2<= data(next_comm_num(i));
+ -- commdat_2<= data(next_comm_num(i));
  end if ;
  if (i=3) then
-  commdat_2<= data(next_comm_num(i));
+ -- commdat_2<= data(next_comm_num(i));
  end if ;
  if (i=4) then
-  commdat_3<= data(next_comm_num(i));
+ -- commdat_3<= data(next_comm_num(i));
  end if ;
 
    end if;

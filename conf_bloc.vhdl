@@ -31,18 +31,21 @@ begin
 process(clk)
 begin
 if rising_edge(clk) then
+    ii<=ii_map;
     comm_1<=comm(COMM_SIZE - 1 downto COMM_SIZE - CODE_SIZE);
     comm_2<=reg_comm(0)(COMM_SIZE - 1 downto COMM_SIZE - CODE_SIZE);
     comm_3<=reg_comm(1)(COMM_SIZE - 1 downto COMM_SIZE - CODE_SIZE);
     if ready='1' then
-        if ii=1 then
+        if ii=2 then
             ii_map<=0;
+            comm_c<=reg_comm(3);
+       elsif ii=1  then
+            ii_map<=2;
             comm_c<=(NOP_COM & NULL_ADDR & NULL_ADDR & NULL_ADDR);
             else
             redy_wr<='1';
-            if(comm(COMM_SIZE - 1 downto COMM_SIZE - CODE_SIZE)=STORE_COM and (reg_comm(0)(COMM_SIZE - 1 downto COMM_SIZE - CODE_SIZE)=LOAD_COM or reg_comm(1)(COMM_SIZE - 1 downto COMM_SIZE - CODE_SIZE)=LOAD_COM) )then
+            if(comm(COMM_SIZE - 1 downto COMM_SIZE - CODE_SIZE)=SUM_COM and (reg_comm(0)(COMM_SIZE - 1 downto COMM_SIZE - CODE_SIZE)=STORE_COM or reg_comm(1)(COMM_SIZE - 1 downto COMM_SIZE - CODE_SIZE)=STORE_COM) )then
                 if comm(3 * ADDR_SIZE - 1 downto 2 * ADDR_SIZE)=reg_comm(0)(3 * ADDR_SIZE - 1 downto 2 * ADDR_SIZE) or comm(3 * ADDR_SIZE - 1 downto 2 * ADDR_SIZE)=reg_comm(1)(3 * ADDR_SIZE - 1 downto 2 * ADDR_SIZE) then
-                   ii<=0;
                     redy_wr<='0';
                         if(ready='1') then
                             ii_map<=1;
@@ -57,7 +60,6 @@ if rising_edge(clk) then
                 end if ;
                 end if ;
         end if;  
-        ii<=ii_map;
 end if;
 end process;
 end Behavioral;
